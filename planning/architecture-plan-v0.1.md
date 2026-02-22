@@ -1057,9 +1057,9 @@ flowchart TD
     subgraph "Query Time"
         Query["vf.query('search text')"] --> LoadMetric["Load collection's metric"]
         LoadMetric --> OpSelect{"metric?"}
-        OpSelect -->|"cosine"| CosOp["Use <=> operator"]
-        OpSelect -->|"l2"| L2Op["Use <-> operator"]
-        OpSelect -->|"inner_product"| IPOp["Use <#> operator"]
+        OpSelect -->|"cosine"| CosOp["Use cosine_distance operator"]
+        OpSelect -->|"l2"| L2Op["Use l2_distance operator"]
+        OpSelect -->|"inner_product"| IPOp["Use max_inner_product operator"]
         CosOp --> Results["ORDER BY distance ASC\nLIMIT top_k"]
         L2Op --> Results
         IPOp --> Results
