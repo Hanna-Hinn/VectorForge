@@ -311,7 +311,7 @@ classDiagram
         +int pool_size = 10
         +int max_overflow = 5
         +bool echo_sql = false
-        +database_url() str
+        +database_url: str  «property»
     }
 
     class StorageConfig {
@@ -428,7 +428,9 @@ OUTPUT: VectorForgeConfig (fully validated)
    e. logging.level must be one of DEBUG, INFO, WARNING, ERROR
 
 4. COMPUTE derived values:
-   a. database_url = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
+   a. database_url = f"postgresql+asyncpg://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{database}"
+      NOTE: User and password are URL-encoded via urllib.parse.quote_plus
+            to handle special characters (@, /, %, :) safely.
    b. is_s3_configured = bool(storage.s3_bucket)
 
 5. IF validation fails:
@@ -538,15 +540,22 @@ classDiagram
         +delete_by_document(document_id: UUID) None
     }
 
+    class QueryLogRepository {
+        +create(data: CreateQueryLogDTO) QueryLog
+        +find_by_collection(collection_id: UUID, limit, offset) list~QueryLog~
+    }
+
     BaseRepository <|-- CollectionRepository
     BaseRepository <|-- DocumentRepository
     BaseRepository <|-- ChunkRepository
     BaseRepository <|-- EmbeddingRepository
+    BaseRepository <|-- QueryLogRepository
 
     CollectionRepository --> AsyncDatabaseEngine : uses session
     DocumentRepository --> AsyncDatabaseEngine : uses session
     ChunkRepository --> AsyncDatabaseEngine : uses session
     EmbeddingRepository --> AsyncDatabaseEngine : uses session
+    QueryLogRepository --> AsyncDatabaseEngine : uses session
 ```
 
 ### Session Lifecycle
@@ -585,7 +594,8 @@ INPUT: DatabaseConfig
 OUTPUT: AsyncEngine + async_sessionmaker
 
 1. BUILD connection URL:
-   url = "postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
+   url = "postgresql+asyncpg://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{database}"
+   NOTE: Credentials are URL-encoded to handle special characters safely.
 
 2. CREATE async engine:
    engine = create_async_engine(
@@ -627,7 +637,11 @@ METHOD find_by_id(id: UUID) → T | None:
 METHOD find_all(filters, limit=20, offset=0) → list[T]:
   1. BUILD query: SELECT * FROM {table}
   2. IF filters provided:
-     FOR EACH (key, value) in filters:
+     a. VALIDATE filter keys against model columns:
+        valid_columns = {c.key for c in class_mapper(model).column_attrs}
+        IF any key not in valid_columns:
+          RAISE ValueError(f"Invalid filter key '{key}' for {model}")
+     b. FOR EACH (key, value) in filters:
        APPEND WHERE clause: {key} = :value
   3. APPEND ORDER BY created_at DESC
   4. APPEND LIMIT :limit OFFSET :offset
@@ -685,6 +699,11 @@ METHOD create(data: CreateCollectionDTO) → Collection:
      - embedding_config = EmbeddingConfig defaults
      - chunking_config = ChunkingConfig defaults
   3. DELEGATE to BaseRepository.create()
+  4. CATCH IntegrityError (concurrent race condition):
+     ROLLBACK session
+     RAISE DuplicateError from IntegrityError
+     NOTE: Prevents TOCTOU race — the application-level check in step 1
+           is a fast-path; the DB constraint is the true safety net.
 
 METHOD delete(id: UUID) → None:
   1. CHECK: count documents in collection
@@ -757,6 +776,7 @@ ALGORITHM: SetupAlembic
 | `vectorforge/db/repositories/document_repo.py` | `DocumentRepository` |
 | `vectorforge/db/repositories/chunk_repo.py` | `ChunkRepository` |
 | `vectorforge/db/repositories/embedding_repo.py` | `EmbeddingRepository` |
+| `vectorforge/db/repositories/query_log_repo.py` | `QueryLogRepository` |
 | `vectorforge/db/migrations/env.py` | Alembic async environment |
 | `vectorforge/db/migrations/versions/001_initial_schema.py` | Initial migration |
 | `alembic.ini` | Alembic configuration |
@@ -862,7 +882,7 @@ classDiagram
         +UUID collection_id
         +str source_uri
         +str content_type
-        +bytes content
+        +str content
         +dict metadata
     }
 
@@ -908,7 +928,7 @@ classDiagram
     class DocumentModel {
         __tablename__ = "documents"
         +UUID id PK
-        +UUID collection_id FK(collections.id)
+        +UUID collection_id FK(collections.id, ondelete=CASCADE)
         +str source_uri
         +str content_type
         +str raw_content NULLABLE
@@ -954,7 +974,7 @@ classDiagram
     class QueryLogModel {
         __tablename__ = "query_logs"
         +UUID id PK
-        +UUID collection_id FK(collections.id)
+        +UUID collection_id FK(collections.id, ondelete=CASCADE)
         +str query_text
         +JSONB retrieved_chunk_ids
         +str generated_response
@@ -1146,7 +1166,7 @@ FIXTURE: sample_document() → CreateDocumentDTO
        collection_id=UUID("..."),
        source_uri="file:///test/sample.txt",
        content_type="text/plain",
-       content=b"Sample document content for testing.",
+       content="Sample document content for testing.",
        metadata={"author": "test"},
      )
 
@@ -1515,15 +1535,19 @@ METHOD check_one(name: str, timeout: float) → ComponentHealth:
 ALGORITHM: BuiltInHealthProbes
 
 PROBE: database_health_probe(session_factory) → ComponentHealth:
-  1. ACQUIRE async session from session_factory
-  2. EXECUTE: SELECT 1
-  3. IF success:
+  1. VALIDATE engine is AsyncDatabaseEngine instance
+     IF NOT: RAISE TypeError with descriptive message
+  2. ACQUIRE async session from session_factory
+  3. EXECUTE: SELECT 1
+  4. IF success:
        RETURN ComponentHealth(name="database", status="healthy")
-  4. IF exception:
+  5. IF exception:
        RETURN ComponentHealth(name="database", status="unhealthy", message=str(error))
 
 PROBE: pgvector_health_probe(session_factory) → ComponentHealth:
-  1. ACQUIRE async session
+  1. VALIDATE engine is AsyncDatabaseEngine instance
+     IF NOT: RAISE TypeError with descriptive message
+  2. ACQUIRE async session
   2. EXECUTE: SELECT extversion FROM pg_extension WHERE extname = 'vector'
   3. IF result exists:
        RETURN ComponentHealth(name="pgvector", status="healthy", message=f"v{version}")
