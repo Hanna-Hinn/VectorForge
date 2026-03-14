@@ -1,0 +1,50 @@
+# Git
+.git
+.github
+.gitignore
+
+# Python
+__pycache__
+*.py[codz]
+*.egg-info
+.eggs
+dist
+build
+.venv
+venv
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage
+htmlcov
+*.egg
+
+# Frontend (handled by its own Dockerfile)
+frontend/node_modules
+frontend/dist
+frontend/.vite
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Env
+.env
+.env.*
+!.env.example
+!env.docker
+
+# Docker
+docker-compose*.yml
+Dockerfile
+
+# Docs / planning
+docs
+planning
+*.md
+LICENSE
+
+# Tests (not needed in production image)
+tests

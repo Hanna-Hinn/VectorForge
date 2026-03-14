@@ -1,0 +1,66 @@
+# ============================================================================
+# VectorForge — Full-Stack Docker Compose
+# ============================================================================
+#
+# Usage:
+#   1. Copy .env.docker to .env and fill in your API keys
+#   2. docker compose up --build
+#
+# Services:
+#   db       — PostgreSQL 16 + pgvector extension
+#   api      — VectorForge FastAPI backend  (port 8000)
+#   frontend — React SPA served by nginx    (port 3000)
+# ============================================================================
+
+services:
+  # ---------- PostgreSQL + pgvector ----------
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${VECTORFORGE_DB_DATABASE:-vectorforge}
+      POSTGRES_USER: ${VECTORFORGE_DB_USER:-vectorforge}
+      POSTGRES_PASSWORD: ${VECTORFORGE_DB_PASSWORD:?Set VECTORFORGE_DB_PASSWORD in .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${VECTORFORGE_DB_USER:-vectorforge} -d ${VECTORFORGE_DB_DATABASE:-vectorforge}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------- Backend API ----------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Override DB host to point at the compose service
+      VECTORFORGE_DB_HOST: db
+      VECTORFORGE_API_HOST: "0.0.0.0"
+
+  # ---------- Frontend (nginx) ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  pgdata:
