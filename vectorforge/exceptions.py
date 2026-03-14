@@ -39,3 +39,15 @@ class LLMError(VectorForgeError):
 
 class StorageError(VectorForgeError):
     """Document storage operation failed."""
+
+
+class DocumentLoadError(VectorForgeError):
+    """Failed to load or parse a document."""
+
+
+class UnsupportedFormatError(VectorForgeError):
+    """Document format is not supported by any registered loader."""
+
+
+class ChunkerNotFoundError(VectorForgeError):
+    """Requested chunking strategy is not registered."""

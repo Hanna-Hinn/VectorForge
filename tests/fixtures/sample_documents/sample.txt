@@ -1,0 +1,6 @@
+This is a plain text sample document for testing.
+
+It has multiple paragraphs separated by blank lines.
+
+The third paragraph provides additional content to test
+chunking with overlap and different strategies.
