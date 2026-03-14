@@ -75,6 +75,14 @@ class AsyncDatabaseEngine:
             raise DatabaseError(msg)
         return self._engine
 
+    @property
+    def session_factory(self) -> async_sessionmaker[AsyncSession]:
+        """Return the session factory, raising if not initialized."""
+        if self._session_factory is None:
+            msg = "Session factory not initialized. Call create_engine() first."
+            raise DatabaseError(msg)
+        return self._session_factory
+
     @asynccontextmanager
     async def get_session(self) -> AsyncIterator[AsyncSession]:
         """Yield an async session within a managed context.

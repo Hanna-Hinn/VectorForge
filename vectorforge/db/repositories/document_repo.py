@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from vectorforge.db.repositories.base import BaseRepository
 from vectorforge.exceptions import NotFoundError
@@ -52,21 +52,51 @@ class DocumentRepository(BaseRepository[Document]):
         await self._session.refresh(instance)
         return self._to_domain(instance)
 
-    async def find_by_collection(self, collection_id: uuid.UUID) -> list[Document]:
-        """Find all documents belonging to a collection.
+    async def find_by_collection(
+        self,
+        collection_id: uuid.UUID,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[Document]:
+        """Find documents belonging to a collection.
+
+        Args:
+            collection_id: The parent collection's UUID.
+            limit: Maximum number of results to return.
+            offset: Number of results to skip.
+
+        Returns:
+            List of Documents in the collection.
+        """
+        stmt = (
+            select(DocumentModel)
+            .where(DocumentModel.collection_id == collection_id)
+            .order_by(DocumentModel.created_at.desc())
+        )
+        if offset is not None:
+            stmt = stmt.offset(offset)
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        result = await self._session.execute(stmt)
+        return [self._to_domain(row) for row in result.scalars().all()]
+
+    async def count_by_collection(self, collection_id: uuid.UUID) -> int:
+        """Count documents in a collection.
 
         Args:
             collection_id: The parent collection's UUID.
 
         Returns:
-            List of Documents in the collection.
+            Number of documents in the collection.
         """
         result = await self._session.execute(
-            select(DocumentModel)
+            select(func.count())
+            .select_from(DocumentModel)
             .where(DocumentModel.collection_id == collection_id)
-            .order_by(DocumentModel.created_at.desc())
         )
-        return [self._to_domain(row) for row in result.scalars().all()]
+        count: int = result.scalar_one()
+        return count
 
     async def find_by_source_uri(self, uri: str) -> Document | None:
         """Find a document by its source URI.

@@ -19,7 +19,9 @@
   - [Monitoring](#monitoring)
 - [5. Run Database Migrations](#5-run-database-migrations)
 - [6. Validate the Setup](#6-validate-the-setup)
-- [7. Optional Extras](#7-optional-extras)
+- [7. Start the REST API Server](#7-start-the-rest-api-server)
+- [8. Start the Frontend (Development)](#8-start-the-frontend-development)
+- [9. Optional Extras](#9-optional-extras)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -404,7 +406,97 @@ Expected output: `No collections found.`
 
 ---
 
-## 7. Optional Extras
+## 7. Start the REST API Server
+
+VectorForge includes a FastAPI-based REST API server in the `server/` package.
+
+### Install Server Dependencies
+
+```bash
+pip install -e ".[server]"
+# Or combined with dev:
+pip install -e ".[dev,server]"
+```
+
+### Configure API Environment Variables
+
+The server reads its own configuration with the `VECTORFORGE_API_` prefix:
+
+| Variable                       | Default       | Description                          |
+|--------------------------------|---------------|--------------------------------------|
+| `VECTORFORGE_API_HOST`         | `127.0.0.1`  | Server bind address                  |
+| `VECTORFORGE_API_PORT`         | `8000`        | Server port                          |
+| `VECTORFORGE_API_CORS_ORIGINS` | `["*"]`       | Allowed CORS origins (JSON list)     |
+| `VECTORFORGE_API_KEY`          | *(empty)*     | API key for authentication           |
+| `VECTORFORGE_API_AUTH_REQUIRED`| `false`       | Require API key for all requests     |
+| `VECTORFORGE_API_LOG_REQUESTS` | `true`        | Enable request logging middleware    |
+
+**Example:**
+
+```env
+VECTORFORGE_API_HOST=0.0.0.0
+VECTORFORGE_API_PORT=8000
+VECTORFORGE_API_AUTH_REQUIRED=true
+VECTORFORGE_API_KEY=your-secret-api-key
+VECTORFORGE_API_CORS_ORIGINS=["http://localhost:5173"]
+```
+
+### Run the Server
+
+```bash
+python -m server
+```
+
+The server starts at `http://127.0.0.1:8000` by default. API documentation is available at:
+
+- **Swagger UI**: `http://127.0.0.1:8000/docs`
+- **ReDoc**: `http://127.0.0.1:8000/redoc`
+
+### Verify the Server
+
+```bash
+# Health check (no auth required)
+curl http://127.0.0.1:8000/api/status
+
+# List collections (with auth if enabled)
+curl -H "X-Api-Key: your-secret-api-key" http://127.0.0.1:8000/api/collections
+```
+
+---
+
+## 8. Start the Frontend (Development)
+
+The React frontend lives in the `frontend/` directory.
+
+### Prerequisites
+
+| Requirement | Minimum Version | Notes                    |
+|-------------|-----------------|--------------------------|
+| **Node.js** | 18+             | LTS recommended          |
+| **npm**     | 9+              | Included with Node.js    |
+
+### Install and Run
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The development server starts at `http://localhost:5173` and proxies `/api` requests to the backend at `http://127.0.0.1:8000`.
+
+### Build for Production
+
+```bash
+cd frontend
+npm run build
+```
+
+The production build is output to `frontend/dist/`.
+
+---
+
+## 9. Optional Extras
 
 ### S3 Storage (MinIO for Local Development)
 

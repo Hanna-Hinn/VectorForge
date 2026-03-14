@@ -10,9 +10,11 @@
 | [CLI Reference](cli.md) | Complete reference for all CLI commands, options, and examples |
 | [CLI Testing Guide](testing-cli.md) | Manual and automated testing procedures for the CLI |
 | [Evaluation Module](evaluation-module.md) | Evaluation module design |
+| [REST API Server](server.md) | Server architecture, endpoints, auth, middleware, and configuration |
+| [Frontend (React UI)](frontend.md) | Frontend architecture, components, hooks, and development guide |
+| [Testing Guide](testing.md) | Backend pytest, frontend Jest, and Playwright E2E testing |
 
 ## Planned Documentation
 
 - [ ] **Architecture Overview** — System design and component relationships
-- [ ] **API Reference** — Python SDK and REST API docs
 - [ ] **Contributing Guide** — Dev setup, testing, code standards
