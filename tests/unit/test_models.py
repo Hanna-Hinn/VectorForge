@@ -21,7 +21,6 @@ from vectorforge.models.domain import (
     DocumentStatus,
     Embedding,
     QueryLog,
-    QueryResult,
     RetrievedChunk,
     UpdateCollectionDTO,
 )
@@ -133,18 +132,11 @@ class TestEmbedding:
         assert emb.model_name == "voyage-3"
 
 
-class TestQueryResult:
-    """Tests for QueryResult and RetrievedChunk."""
-
-    def test_empty_result(self) -> None:
-        """QueryResult can be created with no chunks."""
-        result = QueryResult(query="test query")
-        assert result.chunks == []
-        assert result.generated_answer is None
-        assert result.latency_ms == 0.0
+class TestRetrievedChunk:
+    """Tests for RetrievedChunk."""
 
     def test_with_chunks(self) -> None:
-        """QueryResult holds retrieved chunks with scores."""
+        """RetrievedChunk holds chunk data with scores."""
         now = datetime.now(UTC)
         chunk = Chunk(
             id=uuid.uuid4(),
@@ -156,14 +148,8 @@ class TestQueryResult:
             created_at=now,
         )
         retrieved = RetrievedChunk(chunk=chunk, score=0.95, document_source="test.txt")
-        result = QueryResult(
-            query="find relevant text",
-            chunks=[retrieved],
-            generated_answer="Here is the answer.",
-            latency_ms=42.5,
-        )
-        assert len(result.chunks) == 1
-        assert result.chunks[0].score == 0.95
+        assert retrieved.score == 0.95
+        assert retrieved.document_source == "test.txt"
 
 
 class TestCreateCollectionDTO:

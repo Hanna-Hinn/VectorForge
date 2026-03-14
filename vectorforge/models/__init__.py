@@ -19,7 +19,6 @@ from vectorforge.models.domain import (
     Document,
     DocumentStatus,
     Embedding,
-    QueryResult,
     RetrievedChunk,
     UpdateCollectionDTO,
 )
@@ -41,7 +40,6 @@ __all__ = [
     "Embedding",
     "EmbeddingModel",
     "QueryLogModel",
-    "QueryResult",
     "RetrievedChunk",
     "UpdateCollectionDTO",
 ]

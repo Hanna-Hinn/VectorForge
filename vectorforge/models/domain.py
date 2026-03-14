@@ -128,16 +128,6 @@ class RetrievedChunk(BaseModel):
     document_source: str
 
 
-class QueryResult(BaseModel):
-    """The result of a RAG query."""
-
-    query: str
-    chunks: list[RetrievedChunk] = Field(default_factory=list)
-    generated_answer: str | None = None
-    metadata: dict[str, object] = Field(default_factory=dict)
-    latency_ms: float = 0.0
-
-
 # ---------------------------------------------------------------------------
 # DTOs (Create / Update)
 # ---------------------------------------------------------------------------
