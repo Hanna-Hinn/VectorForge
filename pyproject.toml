@@ -24,12 +24,20 @@ dependencies = [
     "pdfplumber>=0.11",
     "charset-normalizer>=3.3",
     "tiktoken>=0.7",
+    "typer>=0.12",
 ]
 
 [project.optional-dependencies]
 litellm = [
     "litellm>=1.40",
 ]
+rerankers = [
+    "sentence-transformers>=3.0",
+]
+
+[project.scripts]
+vectorforge = "vectorforge.cli.main:app"
+
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
