@@ -51,6 +51,17 @@ const en: Record<string, string> = {
   "analytics.topQueries": "Top Queries",
   "analytics.noStats": "No analytics data yet.",
 
+  // Evaluation
+  "nav.evaluations": "Evaluations",
+  "evaluation.title": "Evaluation Dashboard",
+  "evaluation.noRuns": "No evaluation runs yet.",
+  "evaluation.runNow": "Run Evaluation",
+  "evaluation.status": "Status",
+  "evaluation.samples": "Samples",
+  "evaluation.completedAt": "Completed",
+  "evaluation.recentRuns": "Recent Runs",
+  "evaluation.runId": "Run ID",
+
   // Settings
   "settings.title": "Settings",
   "settings.providers": "Providers",

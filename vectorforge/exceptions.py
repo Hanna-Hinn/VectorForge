@@ -49,5 +49,9 @@ class UnsupportedFormatError(VectorForgeError):
     """Document format is not supported by any registered loader."""
 
 
+class EvaluationError(VectorForgeError):
+    """Evaluation pipeline operation failed."""
+
+
 class ChunkerNotFoundError(VectorForgeError):
     """Requested chunking strategy is not registered."""

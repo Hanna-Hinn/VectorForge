@@ -47,6 +47,19 @@ export default function Sidebar() {
         )}
 
         <NavLink
+          to="/evaluations"
+          className={({ isActive }) =>
+            `mt-4 flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400"
+                : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            }`
+          }
+        >
+          {t("nav.evaluations")}
+        </NavLink>
+
+        <NavLink
           to="/settings"
           className={({ isActive }) =>
             `mt-4 flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${

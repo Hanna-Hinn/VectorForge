@@ -75,3 +75,52 @@ export interface ProvidersInfo {
   embedding_providers: string[];
   llm_providers: string[];
 }
+
+// --- Evaluation ---
+
+export interface EvaluationRun {
+  run_id: string;
+  status: string;
+  sample_size: number;
+  started_at: string | null;
+  completed_at: string | null;
+  summary_scores: Record<string, EvaluatorScores>;
+  created_at: string | null;
+}
+
+export interface EvaluatorScores {
+  avg: number;
+  min: number;
+  max: number;
+  p50: number;
+  below_threshold: number;
+  sample_count: number;
+}
+
+export interface EvaluationResult {
+  id: string;
+  run_id: string;
+  query_log_id: string;
+  evaluator_name: string;
+  score: number | null;
+  details: Record<string, unknown>;
+  reasoning: string | null;
+}
+
+export interface EvaluationRecommendation {
+  id: string;
+  run_id: string;
+  category: string;
+  severity: string;
+  title: string;
+  description: string;
+  evidence: Record<string, unknown>;
+  status: string;
+}
+
+export interface TrendData {
+  evaluator: string;
+  scores: number[];
+  direction: "improving" | "stable" | "degrading";
+  change_pct: number;
+}

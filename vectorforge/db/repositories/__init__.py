@@ -4,6 +4,11 @@ from vectorforge.db.repositories.chunk_repo import ChunkRepository
 from vectorforge.db.repositories.collection_repo import CollectionRepository
 from vectorforge.db.repositories.document_repo import DocumentRepository
 from vectorforge.db.repositories.embedding_repo import EmbeddingRepository
+from vectorforge.db.repositories.evaluation_repo import (
+    EvaluationResultRepository,
+    EvaluationRunRepository,
+    RecommendationRepository,
+)
 from vectorforge.db.repositories.query_log_repo import QueryLogRepository
 
 __all__ = [
@@ -11,5 +16,8 @@ __all__ = [
     "CollectionRepository",
     "DocumentRepository",
     "EmbeddingRepository",
+    "EvaluationResultRepository",
+    "EvaluationRunRepository",
     "QueryLogRepository",
+    "RecommendationRepository",
 ]

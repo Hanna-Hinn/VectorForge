@@ -79,6 +79,167 @@ export const MOCK_PROVIDERS = {
   llm_providers: ["openai", "anthropic"],
 };
 
+// --- Evaluation ---
+
+export const EVAL_RUN_ID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+const EVAL_REC_ID = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+const EVAL_QUERY_LOG_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+export const MOCK_EVALUATION_RUNS = [
+  {
+    run_id: EVAL_RUN_ID,
+    status: "completed",
+    sample_size: 50,
+    started_at: "2025-01-15T09:00:00Z",
+    completed_at: "2025-01-15T09:05:00Z",
+    summary_scores: {
+      retrieval_relevance: {
+        avg: 0.78,
+        min: 0.35,
+        max: 0.98,
+        p50: 0.8,
+        below_threshold: 5,
+        sample_count: 50,
+      },
+      chunk_coverage: {
+        avg: 0.65,
+        min: 0.2,
+        max: 0.95,
+        p50: 0.68,
+        below_threshold: 12,
+        sample_count: 50,
+      },
+      faithfulness: {
+        avg: 0.82,
+        min: 0.4,
+        max: 1.0,
+        p50: 0.85,
+        below_threshold: 4,
+        sample_count: 50,
+      },
+      answer_relevance: {
+        avg: 0.74,
+        min: 0.3,
+        max: 0.97,
+        p50: 0.76,
+        below_threshold: 7,
+        sample_count: 50,
+      },
+      hallucination: {
+        avg: 0.88,
+        min: 0.5,
+        max: 1.0,
+        p50: 0.92,
+        below_threshold: 2,
+        sample_count: 50,
+      },
+      embedding_drift: {
+        avg: 0.91,
+        min: 0.7,
+        max: 1.0,
+        p50: 0.93,
+        below_threshold: 1,
+        sample_count: 50,
+      },
+    },
+    created_at: "2025-01-15T09:00:00Z",
+  },
+];
+
+export const MOCK_EVALUATION_RESULTS = [
+  {
+    id: "aaaa1111-1111-1111-1111-111111111111",
+    run_id: EVAL_RUN_ID,
+    query_log_id: EVAL_QUERY_LOG_ID,
+    evaluator_name: "retrieval_relevance",
+    score: 0.35,
+    details: { per_chunk_scores: [0.3, 0.4] },
+    reasoning: "Chunks were only tangentially related to the query.",
+  },
+  {
+    id: "aaaa2222-2222-2222-2222-222222222222",
+    run_id: EVAL_RUN_ID,
+    query_log_id: EVAL_QUERY_LOG_ID,
+    evaluator_name: "faithfulness",
+    score: 0.6,
+    details: { supported: 3, unsupported: 2, total_claims: 5 },
+    reasoning: "Two claims lacked supporting evidence in context.",
+  },
+  {
+    id: "aaaa3333-3333-3333-3333-333333333333",
+    run_id: EVAL_RUN_ID,
+    query_log_id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    evaluator_name: "retrieval_relevance",
+    score: 0.9,
+    details: { per_chunk_scores: [0.85, 0.95] },
+    reasoning: "Highly relevant chunks retrieved.",
+  },
+];
+
+export const MOCK_RECOMMENDATIONS = [
+  {
+    id: EVAL_REC_ID,
+    run_id: EVAL_RUN_ID,
+    category: "chunking",
+    severity: "medium",
+    title: "Incomplete Chunk Coverage",
+    description:
+      "Retrieved chunks don't cover all aspects of queries. Consider reducing chunk size or increasing top_k.",
+    evidence: { avg_coverage: 0.65, threshold: 0.5 },
+    status: "open",
+  },
+  {
+    id: "ffffffff-ffff-ffff-ffff-fffffffffff2",
+    run_id: EVAL_RUN_ID,
+    category: "generation",
+    severity: "low",
+    title: "Low Answer Relevance",
+    description:
+      "Answers could be more focused on user queries. Consider improving system prompt.",
+    evidence: { avg_relevance: 0.74, threshold: 0.6 },
+    status: "open",
+  },
+];
+
+export const MOCK_TRENDS = [
+  {
+    evaluator: "retrieval_relevance",
+    scores: [0.7, 0.73, 0.78],
+    direction: "improving" as const,
+    change_pct: 11.43,
+  },
+  {
+    evaluator: "chunk_coverage",
+    scores: [0.68, 0.66, 0.65],
+    direction: "degrading" as const,
+    change_pct: -4.41,
+  },
+  {
+    evaluator: "faithfulness",
+    scores: [0.8, 0.81, 0.82],
+    direction: "stable" as const,
+    change_pct: 2.5,
+  },
+  {
+    evaluator: "answer_relevance",
+    scores: [0.72, 0.73, 0.74],
+    direction: "stable" as const,
+    change_pct: 2.78,
+  },
+  {
+    evaluator: "hallucination",
+    scores: [0.85, 0.87, 0.88],
+    direction: "stable" as const,
+    change_pct: 3.53,
+  },
+  {
+    evaluator: "embedding_drift",
+    scores: [0.9, 0.91, 0.91],
+    direction: "stable" as const,
+    change_pct: 1.11,
+  },
+];
+
 /**
  * Install all API mock routes on a Playwright page.
  */
@@ -249,4 +410,88 @@ export async function setupMockApi(page: Page): Promise<void> {
     }
     return route.continue();
   });
+
+  // --- Evaluations ---
+
+  // POST /evaluations/run — trigger
+  await page.route("**/api/evaluations/run", async (route) => {
+    if (route.request().method() === "POST") {
+      return route.fulfill({
+        status: 202,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_EVALUATION_RUNS[0]),
+      });
+    }
+    return route.continue();
+  });
+
+  // GET /evaluations/runs/:id/results
+  await page.route("**/api/evaluations/runs/*/results**", async (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ results: MOCK_EVALUATION_RESULTS }),
+    }),
+  );
+
+  // GET /evaluations/runs/:id (single run)
+  await page.route(
+    `**/api/evaluations/runs/${EVAL_RUN_ID}`,
+    async (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_EVALUATION_RUNS[0]),
+      }),
+  );
+
+  // GET /evaluations/runs (list)
+  await page.route("**/api/evaluations/runs**", async (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ runs: MOCK_EVALUATION_RUNS }),
+    }),
+  );
+
+  // PATCH /evaluations/recommendations/:id
+  await page.route(
+    "**/api/evaluations/recommendations/*",
+    async (route) => {
+      if (route.request().method() === "PATCH") {
+        const body = route.request().postDataJSON();
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ...MOCK_RECOMMENDATIONS[0],
+            status: body.status,
+          }),
+        });
+      }
+      return route.continue();
+    },
+  );
+
+  // GET /evaluations/recommendations
+  await page.route(
+    "**/api/evaluations/recommendations**",
+    async (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          recommendations: MOCK_RECOMMENDATIONS,
+        }),
+      }),
+  );
+
+  // GET /evaluations/trends
+  await page.route("**/api/evaluations/trends**", async (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ trends: MOCK_TRENDS }),
+    }),
+  );
 }

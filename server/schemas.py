@@ -8,6 +8,7 @@ these schemas and the domain DTOs/models defined in ``vectorforge.models``.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -245,3 +246,91 @@ class MessageResponse(BaseModel):
     """Generic success message."""
 
     message: str
+
+
+# ---------------------------------------------------------------------------
+# Evaluation schemas
+# ---------------------------------------------------------------------------
+
+
+class RunEvaluationRequest(BaseModel):
+    """Request body for triggering an evaluation run."""
+
+    sample_size: int | None = None
+    sample_strategy: str | None = None
+
+
+class EvaluationRunResponse(BaseModel):
+    """Summary of an evaluation run."""
+
+    run_id: str
+    status: str
+    sample_size: int
+    started_at: str | None = None
+    completed_at: str | None = None
+    summary_scores: dict[str, Any] = Field(default_factory=dict)
+    created_at: str | None = None
+
+
+class EvaluationRunListResponse(BaseModel):
+    """Paginated list of evaluation runs."""
+
+    runs: list[EvaluationRunResponse]
+
+
+class EvaluationResultResponse(BaseModel):
+    """Individual evaluation result."""
+
+    id: str
+    run_id: str
+    query_log_id: str
+    evaluator_name: str
+    score: float | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+    reasoning: str | None = None
+
+
+class EvaluationResultListResponse(BaseModel):
+    """List of evaluation results."""
+
+    results: list[EvaluationResultResponse]
+
+
+class RecommendationResponse(BaseModel):
+    """An evaluation recommendation."""
+
+    id: str
+    run_id: str
+    category: str
+    severity: str
+    title: str
+    description: str
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    status: str
+
+
+class RecommendationListResponse(BaseModel):
+    """List of recommendations."""
+
+    recommendations: list[RecommendationResponse]
+
+
+class UpdateRecommendationRequest(BaseModel):
+    """Request to update recommendation status."""
+
+    status: str
+
+
+class TrendDataResponse(BaseModel):
+    """Score trend for one evaluator."""
+
+    evaluator: str
+    scores: list[float]
+    direction: str
+    change_pct: float
+
+
+class TrendListResponse(BaseModel):
+    """List of trends over recent runs."""
+
+    trends: list[TrendDataResponse]

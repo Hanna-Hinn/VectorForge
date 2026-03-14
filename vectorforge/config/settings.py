@@ -40,6 +40,7 @@ from vectorforge.config.defaults import (
     DEFAULT_STORAGE_BACKEND,
     DEFAULT_STORAGE_THRESHOLD_MB,
 )
+from vectorforge.evaluation.config import EvaluationConfig
 
 
 def _env_config(env_prefix: str) -> SettingsConfigDict:
@@ -253,6 +254,7 @@ class VectorForgeConfig(BaseSettings):
     chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
     llm: LLMConfig = Field(default_factory=LLMConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
+    evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
 
 
 def load_config() -> VectorForgeConfig:

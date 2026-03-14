@@ -216,3 +216,134 @@ class QueryLogModel(Base):
     collection: Mapped[CollectionModel] = relationship(
         "CollectionModel", back_populates="query_logs"
     )
+    evaluation_results: Mapped[list[EvaluationResultModel]] = relationship(
+        "EvaluationResultModel", back_populates="query_log", cascade="all, delete-orphan"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Evaluation Models
+# ---------------------------------------------------------------------------
+
+
+class EvaluationRunModel(Base):
+    """Evaluation runs table — tracks automated RAG quality evaluations."""
+
+    __tablename__ = "evaluation_runs"
+    __table_args__ = (
+        Index("ix_evaluation_runs_status", "status"),
+        Index("ix_evaluation_runs_created_at", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=func.gen_random_uuid(),
+    )
+    status: Mapped[str] = mapped_column(
+        String(50), default="pending", server_default="pending"
+    )
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    sample_size: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    config: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
+    summary_scores: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, server_default=func.now()
+    )
+
+    # Relationships
+    results: Mapped[list[EvaluationResultModel]] = relationship(
+        "EvaluationResultModel", back_populates="run", cascade="all, delete-orphan"
+    )
+    recommendations: Mapped[list[RecommendationModel]] = relationship(
+        "RecommendationModel", back_populates="run", cascade="all, delete-orphan"
+    )
+
+
+class EvaluationResultModel(Base):
+    """Evaluation results table — per-query per-evaluator scores."""
+
+    __tablename__ = "evaluation_results"
+    __table_args__ = (
+        Index("ix_evaluation_results_run_id", "run_id"),
+        Index("ix_evaluation_results_query_log_id", "query_log_id"),
+        Index("ix_evaluation_results_evaluator_name", "evaluator_name"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=func.gen_random_uuid(),
+    )
+    run_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("evaluation_runs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    query_log_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("query_logs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    evaluator_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    score: Mapped[float | None] = mapped_column(nullable=True)
+    details: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
+    reasoning: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, server_default=func.now()
+    )
+
+    # Relationships
+    run: Mapped[EvaluationRunModel] = relationship(
+        "EvaluationRunModel", back_populates="results"
+    )
+    query_log: Mapped[QueryLogModel] = relationship(
+        "QueryLogModel", back_populates="evaluation_results"
+    )
+
+
+class RecommendationModel(Base):
+    """Recommendations table — actionable suggestions from evaluations."""
+
+    __tablename__ = "recommendations"
+    __table_args__ = (
+        Index("ix_recommendations_run_id", "run_id"),
+        Index("ix_recommendations_severity", "severity"),
+        Index("ix_recommendations_status", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=func.gen_random_uuid(),
+    )
+    run_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("evaluation_runs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    category: Mapped[str] = mapped_column(String(50), nullable=False)
+    severity: Mapped[str] = mapped_column(String(50), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    evidence: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(50), default="pending", server_default="pending"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, server_default=func.now()
+    )
+
+    # Relationships
+    run: Mapped[EvaluationRunModel] = relationship(
+        "EvaluationRunModel", back_populates="recommendations"
+    )

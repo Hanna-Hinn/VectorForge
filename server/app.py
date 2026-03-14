@@ -14,6 +14,7 @@ from server.middleware import ErrorHandlerMiddleware, RequestLoggingMiddleware
 from server.routes.analytics import router as analytics_router
 from server.routes.collections import router as collections_router
 from server.routes.documents import router as documents_router
+from server.routes.evaluations import router as evaluations_router
 from server.routes.query import router as query_router
 from server.routes.status import router as status_router
 from vectorforge.chunking.html import HTMLChunker
@@ -164,6 +165,7 @@ def create_app(api_config: APIConfig | None = None) -> FastAPI:
     app.include_router(documents_router, prefix="/api")
     app.include_router(query_router, prefix="/api")
     app.include_router(analytics_router, prefix="/api")
+    app.include_router(evaluations_router, prefix="/api")
     app.include_router(status_router, prefix="/api")
 
     return app

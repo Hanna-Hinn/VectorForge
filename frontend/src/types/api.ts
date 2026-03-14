@@ -93,6 +93,43 @@ export interface TopQueriesResponse {
 
 export type { SystemHealth, ProvidersInfo };
 
+// --- Evaluations ---
+
+import type {
+  EvaluationRun,
+  EvaluationResult,
+  EvaluationRecommendation,
+  TrendData,
+} from "./models";
+
+export type {
+  EvaluationRun,
+  EvaluationResult,
+  EvaluationRecommendation,
+  TrendData,
+};
+
+export interface RunEvaluationRequest {
+  sample_size?: number;
+  sample_strategy?: string;
+}
+
+export interface EvaluationRunListResponse {
+  runs: EvaluationRun[];
+}
+
+export interface EvaluationResultListResponse {
+  results: EvaluationResult[];
+}
+
+export interface RecommendationListResponse {
+  recommendations: EvaluationRecommendation[];
+}
+
+export interface TrendListResponse {
+  trends: TrendData[];
+}
+
 // --- Common ---
 
 export interface ErrorResponse {

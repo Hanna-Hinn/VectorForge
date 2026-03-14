@@ -10,11 +10,13 @@ from vectorforge.config.settings import (
     VectorForgeConfig,
     load_config,
 )
+from vectorforge.evaluation.config import EvaluationConfig
 
 __all__ = [
     "ChunkingConfig",
     "DatabaseConfig",
     "EmbeddingConfig",
+    "EvaluationConfig",
     "LLMConfig",
     "MonitoringConfig",
     "StorageConfig",

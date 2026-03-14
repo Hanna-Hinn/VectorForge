@@ -5,6 +5,7 @@ import DocumentsPage from "./pages/DocumentsPage";
 import QueryPage from "./pages/QueryPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
+import EvaluationPage from "./pages/EvaluationPage";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
             path="collections/:collectionId/analytics"
             element={<AnalyticsPage />}
           />
+          <Route path="evaluations" element={<EvaluationPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

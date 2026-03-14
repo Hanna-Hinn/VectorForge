@@ -12,6 +12,7 @@ import typer
 
 from vectorforge.cli.collections import collections_app
 from vectorforge.cli.config import config_app
+from vectorforge.cli.evaluate import evaluate_app
 from vectorforge.cli.query import query_app
 
 app = typer.Typer(
@@ -21,6 +22,7 @@ app = typer.Typer(
 )
 app.add_typer(collections_app, name="collections", help="Manage document collections.")
 app.add_typer(config_app, name="config", help="View and validate configuration.")
+app.add_typer(evaluate_app, name="evaluate", help="Run and view RAG quality evaluations.")
 app.add_typer(query_app, name="query", help="Execute RAG queries.")
 
 

@@ -6,7 +6,10 @@ from vectorforge.models.db import (
     CollectionModel,
     DocumentModel,
     EmbeddingModel,
+    EvaluationResultModel,
+    EvaluationRunModel,
     QueryLogModel,
+    RecommendationModel,
 )
 from vectorforge.models.domain import (
     Chunk,
@@ -39,7 +42,10 @@ __all__ = [
     "DocumentStatus",
     "Embedding",
     "EmbeddingModel",
+    "EvaluationResultModel",
+    "EvaluationRunModel",
     "QueryLogModel",
+    "RecommendationModel",
     "RetrievedChunk",
     "UpdateCollectionDTO",
 ]
