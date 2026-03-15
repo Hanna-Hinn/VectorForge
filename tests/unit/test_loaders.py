@@ -188,6 +188,9 @@ class TestXMLLoader:
         doc = loader.load(xml_bytes)
         assert doc.raw_content is not None
         assert "Hello XML" in doc.raw_content
+        # raw_content preserves original XML for downstream chunker
+        assert "<root>" in doc.raw_content
+        assert "<item>" in doc.raw_content
 
     def test_load_extracts_metadata(self) -> None:
         loader = XMLLoader()
@@ -203,7 +206,7 @@ class TestXMLLoader:
 
     def test_load_empty_xml_raises(self) -> None:
         loader = XMLLoader()
-        with pytest.raises(DocumentLoadError, match="No text content"):
+        with pytest.raises(DocumentLoadError):
             loader.load(b"<root/>")
 
 

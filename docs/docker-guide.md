@@ -407,7 +407,35 @@ FROM embeddings LIMIT 5;
 
 ---
 
-## 10. Common Operations
+## 10. Development Mode (Hot-Reload)
+
+For active development, use the dev override so code changes are reflected **instantly** — no rebuild needed.
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+### What Changes in Dev Mode
+
+| Service | Production | Development |
+|---------|-----------|-------------|
+| **Backend** | Static code baked into image | Source mounted as volume; uvicorn `--reload` watches for changes |
+| **Frontend** | nginx serves pre-built SPA | Vite dev server with HMR (Hot Module Replacement) |
+
+### How It Works
+
+- **Backend**: `vectorforge/` and `server/` directories are mounted into the container. Uvicorn watches these directories and automatically restarts when you save a file.
+- **Frontend**: `src/`, `index.html`, and config files are mounted into the container. Vite's HMR pushes changes to the browser without a full page reload.
+
+### Tips
+
+- The first `--build` is still needed to install dependencies. After that, only code changes trigger hot-reload — no rebuild required.
+- If you add a new Python **dependency** to `pyproject.toml`, you need to rebuild: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build api`
+- If you add a new npm **package** to `package.json`, rebuild the frontend: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build frontend`
+
+---
+
+## 11. Common Operations
 
 ### Rebuild After Code Changes
 
@@ -464,7 +492,7 @@ docker compose exec api python -m alembic history
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 ### API container keeps restarting
 
@@ -522,6 +550,7 @@ ports:
 |---------|-------------|
 | `docker compose up --build` | Build & start all services |
 | `docker compose up --build -d` | Same, but detached (background) |
+| `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build` | Dev mode with hot-reload |
 | `docker compose down` | Stop all services |
 | `docker compose down -v` | Stop & delete all data |
 | `docker compose logs -f` | Stream all logs |

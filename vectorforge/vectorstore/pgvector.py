@@ -115,24 +115,29 @@ class PgVectorStore(BaseVectorStore):
             msg = f"chunk_ids ({len(chunk_ids)}) and embeddings ({len(embeddings)}) length mismatch"
             raise ValueError(msg)
 
+        batch_size = 500
         async with self._session_factory() as session:
-            for chunk_id, embedding in zip(chunk_ids, embeddings, strict=True):
-                dimensions = len(embedding)
-                stmt = pg_insert(EmbeddingModel).values(
-                    id=uuid.uuid4(),
-                    chunk_id=chunk_id,
-                    model_name=model_name,
-                    dimensions=dimensions,
-                    embedding=embedding,
-                )
-                stmt = stmt.on_conflict_on_constraint(  # type: ignore[attr-defined]
-                    "uq_embeddings_chunk_id"
-                ).do_update(
-                    set_={
-                        "embedding": embedding,
+            for start in range(0, len(chunk_ids), batch_size):
+                batch_chunk_ids = chunk_ids[start : start + batch_size]
+                batch_embeddings = embeddings[start : start + batch_size]
+                rows = [
+                    {
+                        "id": uuid.uuid4(),
+                        "chunk_id": cid,
                         "model_name": model_name,
-                        "dimensions": dimensions,
+                        "dimensions": len(emb),
+                        "embedding": emb,
                     }
+                    for cid, emb in zip(batch_chunk_ids, batch_embeddings, strict=True)
+                ]
+                stmt = pg_insert(EmbeddingModel).values(rows)
+                stmt = stmt.on_conflict_do_update(
+                    constraint="uq_embeddings_chunk_id",
+                    set_={
+                        "embedding": stmt.excluded.embedding,
+                        "model_name": stmt.excluded.model_name,
+                        "dimensions": stmt.excluded.dimensions,
+                    },
                 )
                 await session.execute(stmt)
             await session.commit()

@@ -152,7 +152,13 @@ class IngestionService:
 
             # 7. Embed chunks
             chunk_texts = [c.text for c in persisted_chunks]
+            logger.info(
+                "Embedding %d chunks (batch_size=%d) …",
+                len(chunk_texts),
+                self._embedder.max_batch_size(),
+            )
             embeddings = await self._embedder.embed(chunk_texts)
+            logger.info("Embedding complete for %d chunks", len(embeddings))
 
             # 8. Persist embedding records
             embedding_dtos = [

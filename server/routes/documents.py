@@ -198,6 +198,9 @@ async def upload_document(
     parameters. The file is written to a temp directory, passed through
     the ingestion pipeline, and cleaned up afterwards.
     """
+    filename = file.filename or "upload"
+    logger.info("Upload received: %s (collection %s)", filename, collection_id)
+
     col_repo = CollectionRepository(session)
     collection = await col_repo.find_by_id(collection_id)
     if collection is None:
@@ -217,7 +220,6 @@ async def upload_document(
             overrides["chunk_overlap"] = chunk_overlap
         chunking_config = ChunkingConfig(**overrides)  # type: ignore[arg-type]
 
-    filename = file.filename or "upload"
     suffix = Path(filename).suffix or ".txt"
 
     tmp_dir = tempfile.mkdtemp(prefix="vf_upload_")

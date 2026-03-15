@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
-import re
 import xml.etree.ElementTree as ET
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from vectorforge.exceptions import DocumentLoadError
 from vectorforge.ingestion.loaders.base import BaseDocumentLoader
+from vectorforge.models.domain import Document, DocumentStatus
 
 logger = logging.getLogger(__name__)
-
-_MULTI_BLANK = re.compile(r"\n{3,}")
 
 
 def _local_name(tag: str) -> str:
@@ -41,13 +42,17 @@ class XMLLoader(BaseDocumentLoader):
         return {".xml"}
 
     def _extract_text(self, raw_bytes: bytes) -> str:
-        """Extract concatenated text from all XML elements.
+        """Validate the XML and return the original XML text.
+
+        Unlike other loaders, the XML loader preserves the original markup
+        so the downstream XMLChunker can parse the structure. Validation
+        ensures we fail fast on malformed files.
 
         Args:
             raw_bytes: The raw XML content.
 
         Returns:
-            Plain text extracted from XML elements.
+            The original XML as a UTF-8 string.
 
         Raises:
             DocumentLoadError: If the XML cannot be parsed.
@@ -58,12 +63,13 @@ class XMLLoader(BaseDocumentLoader):
             msg = f"Failed to parse XML: {exc}"
             raise DocumentLoadError(msg) from exc
 
-        text = "\n".join(
-            segment.strip()
-            for segment in root.itertext()
-            if segment.strip()
-        )
-        return _MULTI_BLANK.sub("\n\n", text)
+        # Verify there is actual text content
+        text_content = "".join(root.itertext()).strip()
+        if not text_content:
+            msg = "XML contains no text content"
+            raise DocumentLoadError(msg)
+
+        return raw_bytes.decode("utf-8", errors="replace")
 
     def _extract_metadata(self, source: str, raw_bytes: bytes) -> dict[str, Any]:
         """Extract metadata including root element name and element count.

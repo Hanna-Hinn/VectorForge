@@ -25,3 +25,4 @@ class APIConfig(BaseSettings):
     api_key: str = ""
     auth_required: bool = False
     log_requests: bool = True
+    reload: bool = False

@@ -1,0 +1,38 @@
+# ============================================================================
+# VectorForge — Development Overrides (hot-reload)
+# ============================================================================
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# What it does:
+#   - Backend: mounts source code and runs uvicorn with --reload
+#   - Frontend: runs Vite dev server instead of nginx
+#   - Code changes are reflected instantly — no rebuild needed
+# ============================================================================
+
+services:
+  # ---------- Backend API (hot-reload) ----------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./vectorforge:/app/vectorforge
+      - ./server:/app/server
+      - ./alembic.ini:/app/alembic.ini
+    environment:
+      VECTORFORGE_API_RELOAD: "true"
+
+  # ---------- Frontend (Vite dev server) ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+    environment:
+      VITE_API_URL: "http://api:8000"

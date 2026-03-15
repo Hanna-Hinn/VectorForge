@@ -34,8 +34,21 @@ def main() -> None:
     """Start the VectorForge API server."""
     _configure_logging()
     config = APIConfig()
-    app = create_app(config)
-    uvicorn.run(app, host=config.host, port=config.port, log_level="info")
+    reload = config.reload
+    if reload:
+        logging.getLogger(__name__).info("Hot-reload enabled — watching for changes")
+        uvicorn.run(
+            "server.app:create_app",
+            factory=True,
+            host=config.host,
+            port=config.port,
+            log_level="info",
+            reload=True,
+            reload_dirs=["server", "vectorforge"],
+        )
+    else:
+        app = create_app(config)
+        uvicorn.run(app, host=config.host, port=config.port, log_level="info")
 
 
 if __name__ == "__main__":

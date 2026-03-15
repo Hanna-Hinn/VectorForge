@@ -1,4 +1,9 @@
-"""Request logging and error handling middleware for the API."""
+"""Request logging and error handling middleware for the API.
+
+Implemented as pure ASGI middleware (not ``BaseHTTPMiddleware``) to avoid
+the body-streaming deadlock that ``BaseHTTPMiddleware`` causes with
+multipart file uploads when multiple middleware layers are stacked.
+"""
 
 from __future__ import annotations
 
@@ -6,9 +11,9 @@ import logging
 import time
 import uuid
 
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.datastructures import MutableHeaders
+from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from vectorforge.exceptions import (
     ConfigurationError,
@@ -23,36 +28,43 @@ from vectorforge.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Log every request with method, path, status, and latency."""
+class RequestLoggingMiddleware:
+    """Pure ASGI middleware — logs every HTTP request with method, path, status, and latency."""
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint,
-    ) -> Response:
-        """Process the request and log timing information.
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
 
-        Args:
-            request: The incoming request.
-            call_next: The next middleware/handler.
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Log the request after the response is sent."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        Returns:
-            The HTTP response.
-        """
         request_id = str(uuid.uuid4())[:8]
         start = time.perf_counter()
-        response = await call_next(request)
-        latency_ms = (time.perf_counter() - start) * 1000
+        status_code = 0
 
+        async def send_wrapper(message: Message) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+                headers = MutableHeaders(scope=message)
+                headers.append("X-Request-Id", request_id)
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+        latency_ms = (time.perf_counter() - start) * 1000
+        method = scope.get("method", "?")
+        path = scope.get("path", "?")
         logger.info(
             "%s %s → %d (%.1fms) [%s]",
-            request.method,
-            request.url.path,
-            response.status_code,
+            method,
+            path,
+            status_code,
             latency_ms,
             request_id,
         )
-        response.headers["X-Request-Id"] = request_id
-        return response
 
 
 # ---------------------------------------------------------------------------
@@ -78,24 +90,31 @@ _EXCEPTION_CODE_MAP: dict[type[VectorForgeError], str] = {
 }
 
 
-class ErrorHandlerMiddleware(BaseHTTPMiddleware):
-    """Catch VectorForgeError exceptions and return structured JSON errors."""
+class ErrorHandlerMiddleware:
+    """Pure ASGI middleware — catches VectorForgeError exceptions and returns structured JSON."""
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint,
-    ) -> Response:
-        """Process the request, converting exceptions to JSON responses.
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
 
-        Args:
-            request: The incoming request.
-            call_next: The next middleware/handler.
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Wrap the downstream app, converting known exceptions to JSON."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        Returns:
-            A JSON error response or the normal response.
-        """
+        response_started = False
+
+        async def send_wrapper(message: Message) -> None:
+            nonlocal response_started
+            if message["type"] == "http.response.start":
+                response_started = True
+            await send(message)
+
         try:
-            return await call_next(request)
+            await self.app(scope, receive, send_wrapper)
         except VectorForgeError as exc:
+            if response_started:
+                raise
             status_code = 400
             error_code = "error"
             for exc_cls, code in _EXCEPTION_STATUS_MAP.items():
@@ -106,19 +125,23 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             logger.warning(
                 "VectorForgeError (%s): %s", error_code, exc,
             )
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=status_code,
                 content={
                     "error": error_code,
                     "message": str(exc),
                 },
             )
+            await response(scope, receive, send)
         except Exception as exc:
+            if response_started:
+                raise
             logger.exception("Unhandled exception: %s", exc)
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=500,
                 content={
                     "error": "internal",
                     "message": "An unexpected error occurred",
                 },
             )
+            await response(scope, receive, send)

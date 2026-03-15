@@ -94,7 +94,6 @@ class VoyageEmbeddingProvider(BaseEmbeddingProvider):
             "model": self._model,
             "input": texts,
             "input_type": input_type,
-            "encoding_format": "float",
         }
         try:
             response = await self._client.post("/embeddings", json=payload)
