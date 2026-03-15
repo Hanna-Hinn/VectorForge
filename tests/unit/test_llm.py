@@ -369,6 +369,7 @@ class TestLLMProviderRegistry:
     def test_auto_discover_fallback_default(self) -> None:
         registry = LLMProviderRegistry()
         env = {
+            "VECTORFORGE_OPENAI_API_KEY": "",
             "VECTORFORGE_ANTHROPIC_API_KEY": "sk-ant-test",
             "VECTORFORGE_LITELLM_API_KEY": "",
         }

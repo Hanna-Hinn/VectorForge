@@ -172,12 +172,14 @@ class IngestionService:
             ]
             await embedding_repo.bulk_create(embedding_dtos)
 
-            # 9. Upsert into vector store
+            # 9. Upsert into vector store (pass session so the upsert
+            #    shares the same transaction as chunk/embedding inserts)
             chunk_ids = [c.id for c in persisted_chunks]
             await self._vector_store.upsert(
                 chunk_ids=chunk_ids,
                 embeddings=embeddings,
                 model_name=self._embedder.model_name(),
+                session=session,
             )
             logger.info("Upserted %d embeddings into vector store", len(embeddings))
 

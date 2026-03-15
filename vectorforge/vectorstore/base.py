@@ -24,6 +24,7 @@ class BaseVectorStore(ABC):
         chunk_ids: list[uuid.UUID],
         embeddings: list[list[float]],
         model_name: str = "",
+        session: object | None = None,
     ) -> None:
         """Insert or update embedding vectors.
 
@@ -31,6 +32,10 @@ class BaseVectorStore(ABC):
             chunk_ids: List of chunk UUIDs.
             embeddings: List of embedding vectors.
             model_name: Name of the embedding model used.
+            session: Optional database session for transactional use.
+                When provided, the store operates within the caller's
+                transaction instead of creating its own. Non-SQL
+                backends may ignore this parameter.
         """
 
     @abstractmethod

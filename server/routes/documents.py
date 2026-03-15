@@ -225,8 +225,9 @@ async def upload_document(
     tmp_dir = tempfile.mkdtemp(prefix="vf_upload_")
     tmp_path = Path(tmp_dir) / f"upload{suffix}"
     try:
-        content = await file.read()
-        tmp_path.write_bytes(content)
+        with tmp_path.open("wb") as out_file:
+            while chunk := await file.read(1024 * 1024):
+                out_file.write(chunk)
 
         document = await ingestion.ingest(
             source=str(tmp_path),

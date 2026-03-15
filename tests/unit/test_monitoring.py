@@ -372,9 +372,10 @@ class TestHealthChecker:
 class TestMonitoringConfigDefaults:
     """Tests for MonitoringConfig validation."""
 
-    def test_defaults(self) -> None:
+    def test_defaults(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """MonitoringConfig loads with correct defaults."""
-        config = MonitoringConfig()
+        monkeypatch.delenv("VECTORFORGE_MONITORING_LOG_LEVEL", raising=False)
+        config = MonitoringConfig(_env_file=None)
         assert config.log_level == "INFO"
         assert config.log_format == "json"
         assert config.metrics_enabled is True

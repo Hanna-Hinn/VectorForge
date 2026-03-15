@@ -103,46 +103,67 @@ class PgVectorStore(BaseVectorStore):
         chunk_ids: list[uuid.UUID],
         embeddings: list[list[float]],
         model_name: str = "",
+        session: object | None = None,
     ) -> None:
         """Insert or update embedding vectors using ON CONFLICT.
+
+        When *session* is provided the caller owns the transaction —
+        no commit/close is performed here.  When omitted a standalone
+        session is created and committed automatically.
 
         Args:
             chunk_ids: List of chunk UUIDs.
             embeddings: List of embedding vectors.
             model_name: The embedding model name.
+            session: Optional AsyncSession for transactional use.
         """
         if len(chunk_ids) != len(embeddings):
             msg = f"chunk_ids ({len(chunk_ids)}) and embeddings ({len(embeddings)}) length mismatch"
             raise ValueError(msg)
 
-        batch_size = 500
-        async with self._session_factory() as session:
-            for start in range(0, len(chunk_ids), batch_size):
-                batch_chunk_ids = chunk_ids[start : start + batch_size]
-                batch_embeddings = embeddings[start : start + batch_size]
-                rows = [
-                    {
-                        "id": uuid.uuid4(),
-                        "chunk_id": cid,
-                        "model_name": model_name,
-                        "dimensions": len(emb),
-                        "embedding": emb,
-                    }
-                    for cid, emb in zip(batch_chunk_ids, batch_embeddings, strict=True)
-                ]
-                stmt = pg_insert(EmbeddingModel).values(rows)
-                stmt = stmt.on_conflict_do_update(
-                    constraint="uq_embeddings_chunk_id",
-                    set_={
-                        "embedding": stmt.excluded.embedding,
-                        "model_name": stmt.excluded.model_name,
-                        "dimensions": stmt.excluded.dimensions,
-                    },
+        if session is not None:
+            await self._upsert_batches(session, chunk_ids, embeddings, model_name)  # type: ignore[arg-type]
+        else:
+            async with self._session_factory() as own_session:
+                await self._upsert_batches(
+                    own_session, chunk_ids, embeddings, model_name,
                 )
-                await session.execute(stmt)
-            await session.commit()
+                await own_session.commit()
 
         logger.info("Upserted %d embeddings", len(chunk_ids))
+
+    @staticmethod
+    async def _upsert_batches(
+        session: AsyncSession,
+        chunk_ids: list[uuid.UUID],
+        embeddings: list[list[float]],
+        model_name: str,
+        batch_size: int = 500,
+    ) -> None:
+        """Execute batched INSERT … ON CONFLICT upserts."""
+        for start in range(0, len(chunk_ids), batch_size):
+            batch_chunk_ids = chunk_ids[start : start + batch_size]
+            batch_embeddings = embeddings[start : start + batch_size]
+            rows = [
+                {
+                    "id": uuid.uuid4(),
+                    "chunk_id": cid,
+                    "model_name": model_name,
+                    "dimensions": len(emb),
+                    "embedding": emb,
+                }
+                for cid, emb in zip(batch_chunk_ids, batch_embeddings, strict=True)
+            ]
+            stmt = pg_insert(EmbeddingModel).values(rows)
+            stmt = stmt.on_conflict_do_update(
+                constraint="uq_embeddings_chunk_id",
+                set_={
+                    "embedding": stmt.excluded.embedding,
+                    "model_name": stmt.excluded.model_name,
+                    "dimensions": stmt.excluded.dimensions,
+                },
+            )
+            await session.execute(stmt)
 
     async def search(
         self,

@@ -182,9 +182,10 @@ class TestLLMConfig:
 class TestMonitoringConfig:
     """Tests for MonitoringConfig."""
 
-    def test_defaults(self) -> None:
+    def test_defaults(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Monitoring config has correct defaults."""
-        config = MonitoringConfig()
+        monkeypatch.delenv("VECTORFORGE_MONITORING_LOG_LEVEL", raising=False)
+        config = MonitoringConfig(_env_file=None)
         assert config.log_level == "INFO"
         assert config.log_format == "json"
         assert config.log_file is None
@@ -215,9 +216,13 @@ class TestMonitoringConfig:
 class TestVectorForgeConfig:
     """Tests for the root VectorForgeConfig."""
 
-    def test_creates_with_defaults(self) -> None:
+    def test_creates_with_defaults(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Root config aggregates all sub-configs with their defaults."""
-        config = VectorForgeConfig()
+        monkeypatch.delenv("VECTORFORGE_MONITORING_LOG_LEVEL", raising=False)
+        config = VectorForgeConfig(
+            _env_file=None,
+            monitoring=MonitoringConfig(_env_file=None),
+        )
         assert config.database.host == "localhost"
         assert config.embedding.default_provider == "voyage"
         assert config.chunking.chunk_size == 1000
