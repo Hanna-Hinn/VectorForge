@@ -18,6 +18,20 @@ export default {
           900: "#002d99",
         },
       },
+      keyframes: {
+        "slide-in": {
+          "0%": { opacity: "0", transform: "translateY(0.5rem)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "animate-in": {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+      },
+      animation: {
+        "slide-in": "slide-in 200ms ease-out",
+        in: "animate-in 150ms ease-out",
+      },
     },
   },
   plugins: [],

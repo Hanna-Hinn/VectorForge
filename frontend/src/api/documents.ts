@@ -1,6 +1,6 @@
 /** Documents API calls. */
 
-import { get, post, del } from "./client";
+import { get, post, postForm, del } from "./client";
 import type {
   DocumentListResponse,
   DocumentDetailResponse,
@@ -39,6 +39,19 @@ export function batchIngest(
     `/collections/${collectionId}/documents/batch`,
     documents,
   );
+}
+
+export function uploadDocument(
+  collectionId: string,
+  file: File,
+  metadata?: Record<string, unknown>,
+): Promise<Document> {
+  const form = new FormData();
+  form.append("file", file);
+  if (metadata) {
+    form.append("metadata", JSON.stringify(metadata));
+  }
+  return postForm<Document>(`/collections/${collectionId}/documents/upload`, form);
 }
 
 export function deleteDocument(id: string): Promise<MessageResponse> {

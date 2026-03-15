@@ -5,6 +5,7 @@ from vectorforge.ingestion.loaders.html_loader import HTMLLoader
 from vectorforge.ingestion.loaders.markdown_loader import MarkdownLoader
 from vectorforge.ingestion.loaders.pdf_loader import PDFLoader
 from vectorforge.ingestion.loaders.text_loader import TextLoader
+from vectorforge.ingestion.loaders.xml_loader import XMLLoader
 
 __all__ = [
     "BaseDocumentLoader",
@@ -13,4 +14,5 @@ __all__ = [
     "MarkdownLoader",
     "PDFLoader",
     "TextLoader",
+    "XMLLoader",
 ]

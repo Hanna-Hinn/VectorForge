@@ -48,17 +48,20 @@ export default function CollectionsPage() {
     <>
       <Header title={t("collections.title")} />
       <div className="p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
+        <div className="mb-6 flex items-center justify-between">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {collections?.length ?? 0} collection(s)
           </p>
           <Button onClick={() => setDialogOpen(true)}>
+            <svg className="-ml-0.5 mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
             {t("common.create")}
           </Button>
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-16">
             <Spinner size="lg" />
           </div>
         ) : collections && collections.length > 0 ? (
@@ -72,9 +75,26 @@ export default function CollectionsPage() {
             ))}
           </div>
         ) : (
-          <p className="py-12 text-center text-gray-400">
-            {t("collections.empty")}
-          </p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800">
+              <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {t("collections.empty")}
+            </p>
+            <Button
+              className="mt-4"
+              size="sm"
+              onClick={() => setDialogOpen(true)}
+            >
+              <svg className="-ml-0.5 mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              {t("common.create")}
+            </Button>
+          </div>
         )}
       </div>
 

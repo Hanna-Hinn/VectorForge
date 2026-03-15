@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import tempfile
 import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Form, Query, UploadFile, status
 
 from server.dependencies import ApiKey, DbSession, IngestionDep
 from server.schemas import (
@@ -171,6 +174,70 @@ async def batch_ingest_documents(
             logger.warning("Batch ingest failed for %s: %s", body.source, exc)
 
     return BatchIngestResponse(results=results, succeeded=succeeded, failed=failed)
+
+
+@router.post(
+    "/collections/{collection_id}/documents/upload",
+    response_model=DocumentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_document(
+    collection_id: uuid.UUID,
+    file: UploadFile,
+    session: DbSession,
+    ingestion: IngestionDep,
+    _key: ApiKey,
+    metadata: str = Form(default="{}"),
+    chunking_strategy: str | None = Form(default=None),
+    chunk_size: int | None = Form(default=None),
+    chunk_overlap: int | None = Form(default=None),
+) -> DocumentResponse:
+    """Upload a file and ingest it into a collection.
+
+    Accepts multipart form data with a file and optional metadata/chunking
+    parameters. The file is written to a temp directory, passed through
+    the ingestion pipeline, and cleaned up afterwards.
+    """
+    col_repo = CollectionRepository(session)
+    collection = await col_repo.find_by_id(collection_id)
+    if collection is None:
+        msg = f"Collection {collection_id} not found"
+        raise NotFoundError(msg)
+
+    parsed_metadata: dict[str, object] = json.loads(metadata)
+
+    chunking_config: ChunkingConfig | None = None
+    if chunking_strategy or chunk_size or chunk_overlap:
+        overrides: dict[str, object] = {}
+        if chunking_strategy:
+            overrides["strategy"] = chunking_strategy
+        if chunk_size is not None:
+            overrides["chunk_size"] = chunk_size
+        if chunk_overlap is not None:
+            overrides["chunk_overlap"] = chunk_overlap
+        chunking_config = ChunkingConfig(**overrides)  # type: ignore[arg-type]
+
+    filename = file.filename or "upload"
+    suffix = Path(filename).suffix or ".txt"
+
+    tmp_dir = tempfile.mkdtemp(prefix="vf_upload_")
+    tmp_path = Path(tmp_dir) / f"upload{suffix}"
+    try:
+        content = await file.read()
+        tmp_path.write_bytes(content)
+
+        document = await ingestion.ingest(
+            source=str(tmp_path),
+            collection_id=collection_id,
+            session=session,
+            metadata=parsed_metadata,
+            chunking_config=chunking_config,
+        )
+    finally:
+        tmp_path.unlink(missing_ok=True)
+        Path(tmp_dir).rmdir()
+
+    return _to_response(document)
 
 
 @router.get("/documents/{document_id}", response_model=DocumentDetailResponse)

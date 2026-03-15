@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as documentsApi from "../api/documents";
-import type { IngestDocumentRequest } from "../types/api";
 
 function queryKey(collectionId: string) {
   return ["documents", collectionId] as const;
@@ -28,11 +27,11 @@ export function useDocument(id: string) {
   });
 }
 
-export function useIngestDocument(collectionId: string) {
+export function useUploadDocument(collectionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: IngestDocumentRequest) =>
-      documentsApi.ingestDocument(collectionId, data),
+    mutationFn: (file: File) =>
+      documentsApi.uploadDocument(collectionId, file),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: queryKey(collectionId),

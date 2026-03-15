@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <book id="1">
+    <title>Sample XML Document</title>
+    <author>VectorForge</author>
+    <year>2025</year>
+    <description>This is a sample XML file used for testing the XML document loader.</description>
+  </book>
+  <book id="2">
+    <title>Advanced Retrieval</title>
+    <author>Jane Doe</author>
+    <year>2026</year>
+    <description>A comprehensive guide to retrieval-augmented generation techniques.</description>
+  </book>
+</catalog>

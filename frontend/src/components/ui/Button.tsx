@@ -38,9 +38,10 @@ export default function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-md font-medium
-        transition-colors focus-visible:outline-none focus-visible:ring-2
-        focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50
+      className={`inline-flex items-center justify-center rounded-lg font-medium
+        transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
+        focus-visible:ring-offset-2 active:scale-[0.97]
+        disabled:pointer-events-none disabled:opacity-50
         ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       disabled={disabled || loading}
       {...props}

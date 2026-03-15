@@ -31,6 +31,7 @@ from vectorforge.ingestion.loaders.html_loader import HTMLLoader
 from vectorforge.ingestion.loaders.markdown_loader import MarkdownLoader
 from vectorforge.ingestion.loaders.pdf_loader import PDFLoader
 from vectorforge.ingestion.loaders.text_loader import TextLoader
+from vectorforge.ingestion.loaders.xml_loader import XMLLoader
 from vectorforge.llm.registry import LLMProviderRegistry
 from vectorforge.monitoring.health import (
     HealthChecker,
@@ -100,6 +101,7 @@ def _build_lifespan(
             MarkdownLoader(),
             HTMLLoader(),
             PDFLoader(),
+            XMLLoader(),
         ])
         app.state.loader_registry = loader_registry
 

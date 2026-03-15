@@ -30,10 +30,16 @@ const en: Record<string, string> = {
 
   // Documents
   "documents.title": "Documents",
-  "documents.ingest.title": "Ingest Document",
-  "documents.ingest.content": "Content",
-  "documents.ingest.sourceUri": "Source URI",
+  "documents.upload.title": "Upload Document",
+  "documents.upload.chooseFile": "Choose a file",
+  "documents.upload.submit": "Upload",
+  "documents.upload.dragDrop": "Drag & drop your file here",
+  "documents.upload.or": "or",
+  "documents.upload.browse": "browse to choose",
+  "documents.upload.remove": "Remove file",
+  "documents.upload.accepted": "Accepted",
   "documents.empty": "No documents in this collection.",
+  "documents.empty.hint": "Upload a document to get started with your knowledge base.",
 
   // Query
   "query.title": "Query",

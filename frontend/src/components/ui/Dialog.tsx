@@ -44,12 +44,13 @@ export default function Dialog({
   return (
     <dialog
       ref={dialogRef}
-      className="w-full max-w-lg rounded-lg border border-gray-200 bg-white
-        p-0 shadow-xl backdrop:bg-black/50 dark:border-gray-700 dark:bg-gray-900"
+      className="w-full max-w-lg rounded-xl border border-gray-200 bg-white
+        p-0 shadow-2xl backdrop:bg-black/50 dark:border-gray-700 dark:bg-gray-900
+        animate-in"
       aria-labelledby="dialog-title"
     >
       <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <h2 id="dialog-title" className="text-lg font-semibold">
+        <h2 id="dialog-title" className="text-lg font-semibold tracking-tight">
           {title}
         </h2>
         <Button

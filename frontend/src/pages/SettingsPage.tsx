@@ -45,7 +45,7 @@ export default function SettingsPage() {
               {health.components.map((comp) => (
                 <div
                   key={comp.name}
-                  className="flex items-center justify-between rounded border border-gray-100 px-3 py-2 text-sm dark:border-gray-800"
+                  className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 text-sm dark:border-gray-800"
                 >
                   <span>{comp.name}</span>
                   <Badge

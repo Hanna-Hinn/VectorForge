@@ -11,6 +11,7 @@ from vectorforge.ingestion.loaders.base import DocumentLoaderRegistry
 from vectorforge.ingestion.loaders.html_loader import HTMLLoader
 from vectorforge.ingestion.loaders.markdown_loader import MarkdownLoader
 from vectorforge.ingestion.loaders.text_loader import TextLoader
+from vectorforge.ingestion.loaders.xml_loader import XMLLoader
 from vectorforge.models.domain import DocumentStatus
 
 FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures" / "sample_documents"
@@ -150,6 +151,60 @@ class TestPDFLoader:
 
         loader = PDFLoader()
         assert loader.content_type() == "application/pdf"
+
+
+# ---------------------------------------------------------------------------
+# XMLLoader tests
+# ---------------------------------------------------------------------------
+
+
+class TestXMLLoader:
+    """Tests for the XML document loader."""
+
+    def test_supported_extensions(self) -> None:
+        loader = XMLLoader()
+        assert ".xml" in loader.supported_extensions()
+
+    def test_content_type(self) -> None:
+        loader = XMLLoader()
+        assert loader.content_type() == "application/xml"
+
+    def test_supports_xml_file(self) -> None:
+        loader = XMLLoader()
+        assert loader.supports("data.xml") is True
+        assert loader.supports("data.json") is False
+
+    def test_load_from_file(self) -> None:
+        loader = XMLLoader()
+        doc = loader.load(str(FIXTURES_DIR / "sample.xml"))
+        assert doc.raw_content is not None
+        assert "Sample XML Document" in doc.raw_content
+        assert doc.content_type == "application/xml"
+        assert doc.status == DocumentStatus.PENDING
+
+    def test_load_from_bytes(self) -> None:
+        xml_bytes = b"<root><item>Hello XML</item></root>"
+        loader = XMLLoader()
+        doc = loader.load(xml_bytes)
+        assert doc.raw_content is not None
+        assert "Hello XML" in doc.raw_content
+
+    def test_load_extracts_metadata(self) -> None:
+        loader = XMLLoader()
+        doc = loader.load(str(FIXTURES_DIR / "sample.xml"))
+        assert doc.metadata["filename"] == "sample.xml"
+        assert doc.metadata["root_tag"] == "catalog"
+        assert doc.metadata["element_count"] > 0
+
+    def test_load_malformed_xml_raises(self) -> None:
+        loader = XMLLoader()
+        with pytest.raises(DocumentLoadError, match="Failed to parse XML"):
+            loader.load(b"<not>valid<xml")
+
+    def test_load_empty_xml_raises(self) -> None:
+        loader = XMLLoader()
+        with pytest.raises(DocumentLoadError, match="No text content"):
+            loader.load(b"<root/>")
 
 
 # ---------------------------------------------------------------------------

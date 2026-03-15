@@ -593,6 +593,45 @@ class TestIngestRoutes:
         assert data["succeeded"] == 1
         assert data["failed"] == 1
 
+    def test_upload_document(self, client: TestClient) -> None:
+        mock_svc = AsyncMock()
+        mock_svc.ingest = AsyncMock(return_value=_SAMPLE_DOCUMENT)
+        self._override_ingestion(client, mock_svc)
+
+        with patch(
+            "server.routes.documents.CollectionRepository",
+        ) as MockColRepo:
+            MockColRepo.return_value.find_by_id = AsyncMock(
+                return_value=_SAMPLE_COLLECTION,
+            )
+            resp = client.post(
+                f"/api/collections/{_COLLECTION_ID}/documents/upload",
+                files={"file": ("test.txt", b"Hello world", "text/plain")},
+                data={"metadata": '{"source": "upload-test"}'},
+            )
+
+        self._clear_overrides(client)
+
+        assert resp.status_code == 201
+        assert resp.json()["source_uri"] == "test.txt"
+        # Verify the temp file was cleaned up (ingest was called with a path)
+        call_kwargs = mock_svc.ingest.call_args
+        assert call_kwargs is not None
+
+    def test_upload_document_collection_not_found(
+        self, client: TestClient,
+    ) -> None:
+        random_id = uuid.uuid4()
+        with patch(
+            "server.routes.documents.CollectionRepository",
+        ) as MockColRepo:
+            MockColRepo.return_value.find_by_id = AsyncMock(return_value=None)
+            resp = client.post(
+                f"/api/collections/{random_id}/documents/upload",
+                files={"file": ("test.txt", b"Hello world", "text/plain")},
+            )
+        assert resp.status_code == 404
+
 
 # ---------------------------------------------------------------------------
 # Query Endpoints

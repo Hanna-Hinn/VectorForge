@@ -53,7 +53,8 @@ export default function Toast() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg ${variantStyles[toast.variant]}`}
+          className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg
+            animate-slide-in ${variantStyles[toast.variant]}`}
           role="alert"
         >
           <span className="text-sm">{toast.text}</span>

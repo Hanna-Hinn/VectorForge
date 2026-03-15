@@ -31,7 +31,7 @@ export default function AnalyticsPage() {
     return (
       <>
         <Header title={title} />
-        <p className="py-20 text-center text-gray-400">{t("analytics.noStats")}</p>
+        <p className="flex flex-col items-center py-20 text-center text-gray-400">{t("analytics.noStats")}</p>
       </>
     );
   }
@@ -73,9 +73,9 @@ export default function AnalyticsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="pb-2 text-left font-medium text-gray-500">#</th>
-                  <th className="pb-2 text-left font-medium text-gray-500">Query</th>
-                  <th className="pb-2 text-right font-medium text-gray-500">Count</th>
+                  <th className="pb-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">#</th>
+                  <th className="pb-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Query</th>
+                  <th className="pb-2 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Count</th>
                 </tr>
               </thead>
               <tbody>

@@ -74,4 +74,28 @@ export function patch<T>(path: string, body?: unknown): Promise<T> {
   });
 }
 
+export async function postForm<T>(path: string, body: FormData): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (apiKey) {
+    headers["X-Api-Key"] = apiKey;
+  }
+
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    headers,
+    body,
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new ApiError(response.status, data.detail ?? response.statusText);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export { ApiError };
